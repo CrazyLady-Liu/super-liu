@@ -1,10 +1,11 @@
-const { createApp, ref, computed } = Vue;
+const { createApp, ref, computed, nextTick } = Vue;
 
 const app = createApp({
     setup() {
         const gameState = ref('ready');
         const count = ref(0);
         const timeLeft = ref(10);
+        const isClickAnimating = ref(false);
         let timer = null;
 
         const clicksPerSecond = computed(() => {
@@ -25,9 +26,13 @@ const app = createApp({
             }, 1000);
         };
 
-        const handleClick = () => {
+        const handleClick = (event) => {
             if (gameState.value === 'playing') {
                 count.value++;
+                isClickAnimating.value = true;
+                nextTick(() => {
+                    isClickAnimating.value = false;
+                });
             }
         };
 
@@ -54,6 +59,7 @@ const app = createApp({
             count,
             timeLeft,
             clicksPerSecond,
+            isClickAnimating,
             startGame,
             handleClick,
             resetGame
@@ -74,7 +80,7 @@ const app = createApp({
             </template>
 
             <template v-else-if="gameState === 'playing'">
-                <div class="count-display">{{ count }}</div>
+                <div class="count-display" :class="{ pop: isClickAnimating }">{{ count }}</div>
                 <button class="click-button" @click="handleClick">
                     点击我！
                 </button>
