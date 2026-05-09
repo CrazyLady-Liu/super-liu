@@ -13,7 +13,9 @@ const app = createApp({
         const timer = ref(0);
         const moves = ref(0);
         const consecutiveMatches = ref(0);
+        const memoryCountdown = ref(3);
         let timerInterval = null;
+        let memoryInterval = null;
 
         const difficultyConfig = {
             easy: { pairs: 6, baseScore: 10, timeBonus: 50 },
@@ -39,13 +41,13 @@ const app = createApp({
             cards.value = shuffledCards.map((icon, index) => ({
                 id: index,
                 icon,
-                isFlipped: false,
+                isFlipped: true,
                 isMatched: false
             }));
         };
 
-        const startGame = () => {
-            gameState.value = 'playing';
+        const startMemoryPhase = () => {
+            gameState.value = 'memory';
             createCards();
             flippedCards.value = [];
             matchedPairs.value = 0;
@@ -53,6 +55,20 @@ const app = createApp({
             timer.value = 0;
             moves.value = 0;
             consecutiveMatches.value = 0;
+            memoryCountdown.value = 3;
+            
+            memoryInterval = setInterval(() => {
+                memoryCountdown.value--;
+                if (memoryCountdown.value <= 0) {
+                    clearInterval(memoryInterval);
+                    startGame();
+                }
+            }, 1000);
+        };
+
+        const startGame = () => {
+            gameState.value = 'playing';
+            cards.value.forEach(card => card.isFlipped = false);
             startTimer();
         };
 
@@ -139,6 +155,7 @@ const app = createApp({
 
         const resetGame = () => {
             stopTimer();
+            if (memoryInterval) clearInterval(memoryInterval);
             gameState.value = 'start';
             cards.value = [];
             flippedCards.value = [];
@@ -147,6 +164,7 @@ const app = createApp({
             timer.value = 0;
             moves.value = 0;
             consecutiveMatches.value = 0;
+            memoryCountdown.value = 3;
         };
 
         const formatTime = (seconds) => {
@@ -167,8 +185,9 @@ const app = createApp({
             timer,
             moves,
             consecutiveMatches,
+            memoryCountdown,
             pairsCount,
-            startGame,
+            startMemoryPhase,
             flipCard,
             resetGame,
             formatTime,
@@ -182,7 +201,7 @@ const app = createApp({
 
             <template v-if="gameState === 'start'">
                 <div class="start-screen">
-                    <p>选择难度，开始挑战你的记忆力！</p>
+                    <p class="subtitle">记住卡片位置，3秒后开始！</p>
                     <div class="difficulty-select">
                         <button 
                             class="difficulty-btn" 
@@ -206,9 +225,29 @@ const app = createApp({
                             困难 (12对)
                         </button>
                     </div>
-                    <button class="btn btn-primary" @click="startGame">
+                    <button class="btn btn-primary" @click="startMemoryPhase">
                         开始游戏
                     </button>
+                </div>
+            </template>
+
+            <template v-else-if="gameState === 'memory'">
+                <div class="memory-phase">
+                    <div class="countdown-display">{{ memoryCountdown }}</div>
+                    <p class="countdown-text">记住卡片位置！</p>
+                    <div class="cards-grid" :class="difficulty">
+                        <div 
+                            v-for="card in cards" 
+                            :key="card.id"
+                            class="card"
+                            :class="{ flipped: card.isFlipped, matched: card.isMatched }"
+                        >
+                            <div class="card-inner">
+                                <div class="card-front">?</div>
+                                <div class="card-back">{{ card.icon }}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </template>
 

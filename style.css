@@ -74,6 +74,36 @@ body {
     animation: pulse 0.5s ease-in-out;
 }
 
+.memory-phase {
+    text-align: center;
+}
+
+.countdown-display {
+    font-size: 5rem;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 8px;
+    animation: countdownPulse 1s ease-in-out infinite;
+}
+
+.countdown-text {
+    font-size: 1.2rem;
+    color: #4a5568;
+    margin-bottom: 24px;
+    font-weight: 600;
+}
+
+@keyframes countdownPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.subtitle {
+    color: #718096;
+    margin-bottom: 24px;
+    font-size: 1.1rem;
+}
+
 .difficulty-select {
     display: flex;
     gap: 12px;
@@ -221,12 +251,6 @@ body {
     text-align: center;
 }
 
-.start-screen p {
-    color: #718096;
-    margin-bottom: 24px;
-    font-size: 1.1rem;
-}
-
 .win-screen h2 {
     font-size: 2rem;
     color: #667eea;
@@ -297,5 +321,9 @@ body {
     .stars-display {
         font-size: 2rem;
         letter-spacing: 4px;
+    }
+    
+    .countdown-display {
+        font-size: 4rem;
     }
 }
