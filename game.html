@@ -1,3 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 接物躲避小游戏</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.stats-bar {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.stat-box {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 90px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stat-value.score {
+    color: #ffd700;
+}
+
+.stat-value.time {
+    color: #00ffff;
+}
+
+.stat-value.difficulty {
+    background: linear-gradient(90deg, #00ff88, #00ffff, #667eea, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
+.heart {
+    font-size: 1.3rem;
+    display: inline-block;
+    transition: all 0.3s;
+}
+
+.heart.empty {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+.canvas-container {
+    position: relative;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 0 40px rgba(102, 126, 234, 0.3),
+                inset 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+canvas {
+    display: block;
+    border-radius: 15px;
+    background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+}
+
+.start-screen {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.game-over-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal {
+    text-align: center;
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    animation: popIn 0.4s ease;
+    max-width: 450px;
+    box-shadow: 0 0 50px rgba(102, 126, 234, 0.5);
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.modal-close-btn:hover {
+    background: rgba(255, 100, 100);
+    transform: rotate(90deg);
+}
+
+.btn-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-3px);
+}
+
+@keyframes popIn {
+    from {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal h2 {
+    font-size: 2.2rem;
+    margin-bottom: 20px;
+    color: #667eea;
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
+.modal p {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.btn {
+    margin-top: 25px;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+}
+
+.btn-primary:active {
+    transform: translateY(-1px);
+}
+
+.controls-hint {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    padding: 10px;
+}
+
+@media (max-width: 600px) {
+    .header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .stats-bar {
+        gap: 10px;
+    }
+    
+    .stat-box {
+        padding: 10px 15px;
+        min-width: 75px;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .modal {
+        padding: 25px;
+    }
+    
+    .modal h2 {
+        font-size: 1.6rem;
+    }
+    
+    .modal p {
+        font-size: 0.9rem;
+    }
+}
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <header class="header">
+                <h1>🎮 接物躲避小游戏</h1>
+            </header>
+
+            <div class="game-wrapper">
+                <div class="stats-bar">
+                    <div class="stat-box">
+                        <span class="stat-label">分数</span>
+                        <span class="stat-value score">{{ score }}</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">时长</span>
+                        <span class="stat-value time">{{ gameTime }}s</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">难度</span>
+                        <span class="stat-value difficulty">{{ Math.min(Math.floor(getDifficulty()), 8) }}</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">生命值</span>
+                        <span class="stat-value lives">
+                            <span v-for="i in maxLives" :key="i" class="heart" :class="{ empty: i > lives }">❤️</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas ref="gameCanvas" 
+                            :width="canvasWidth" 
+                            :height="canvasHeight"
+                            @keydown="handleKeyDown"
+                            @touchstart="handleTouchStart"
+                            @touchmove="handleTouchMove"
+                            @touchend="handleTouchEnd"
+                            tabindex="0"></canvas>
+                    
+                    <div v-if="!isPlaying && !isGameOver" class="start-screen">
+                        <div class="modal">
+                            <h2>准备开始!</h2>
+                            <p>⬅️ ➡️ 用方向键或触屏控制挡板</p>
+                            <p>🌟 接住星星(+10) 钻石(+25) 超级星(+50)</p>
+                            <p>💣 避开炸弹和快速炸弹！</p>
+                            <p>⏱️ 分数和时间都会增加难度!</p>
+                            <button class="btn btn-primary" @click="startGame">开始游戏</button>
+                        </div>
+                    </div>
+                    
+                    <div v-if="showGameOverModal" class="game-over-screen">
+                        <div class="modal" style="position: relative;">
+                            <button class="modal-close-btn" @click="closeGameOverModal" title="查看本局画面">×</button>
+                            <h2>游戏结束!</h2>
+                            <p>最终得分: {{ finalScore }}</p>
+                            <p>游戏时长: {{ finalTime }}秒</p>
+                            <p>最终难度: {{ finalDifficulty }}</p>
+                            <div class="btn-group">
+                                <button class="btn btn-secondary" @click="closeGameOverModal">查看画面</button>
+                                <button class="btn btn-primary" @click="resetGame">重新开始</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls-hint">
+                    <p>⌨️ 键盘: ← → 或 A D | 📱 触屏: 左右滑动</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script>
 const { createApp, ref, onMounted, onUnmounted } = Vue;
 
 createApp({
@@ -12,7 +376,13 @@ createApp({
         const lives = ref(maxLives);
         const isPlaying = ref(false);
         const isGameOver = ref(false);
+        const showGameOverModal = ref(false);
         const gameTime = ref(0);
+        
+        // 保存最终状态
+        const finalScore = ref(0);
+        const finalTime = ref(0);
+        const finalDifficulty = ref(0);
         
         const paddle = {
             x: canvasWidth / 2 - 60,
@@ -312,6 +682,12 @@ createApp({
         const endGame = () => {
             isPlaying.value = false;
             isGameOver.value = true;
+            // 保存最终状态
+            finalScore.value = score.value;
+            finalTime.value = gameTime.value;
+            finalDifficulty.value = Math.min(Math.floor(getDifficulty()), 8);
+            showGameOverModal.value = true;
+            
             if (animationId) {
                 cancelAnimationFrame(animationId);
             }
@@ -321,6 +697,10 @@ createApp({
             if (gameTimer) {
                 clearInterval(gameTimer);
             }
+        };
+        
+        const closeGameOverModal = () => {
+            showGameOverModal.value = false;
         };
         
         const resetGame = () => {
@@ -334,6 +714,8 @@ createApp({
                 clearInterval(gameTimer);
             }
             items.value = [];
+            isGameOver.value = false;
+            showGameOverModal.value = false;
             startGame();
         };
         
@@ -375,6 +757,10 @@ createApp({
             lastTouchX = touchX;
         };
         
+        const handleTouchEnd = () => {
+            lastTouchX = null;
+        };
+        
         onMounted(() => {
             ctx = gameCanvas.value.getContext('2d');
             window.addEventListener('keydown', handleKeyDown);
@@ -405,10 +791,15 @@ createApp({
             maxLives,
             isPlaying,
             isGameOver,
+            showGameOverModal,
             gameTime,
+            finalScore,
+            finalTime,
+            finalDifficulty,
             getDifficulty,
             startGame,
             resetGame,
+            closeGameOverModal,
             handleKeyDown,
             handleTouchStart,
             handleTouchMove,
@@ -416,3 +807,6 @@ createApp({
         };
     }
 }).mount('#app');
+    </script>
+</body>
+</html>
