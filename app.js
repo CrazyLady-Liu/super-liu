@@ -12,6 +12,7 @@ createApp({
         const lives = ref(maxLives);
         const isPlaying = ref(false);
         const isGameOver = ref(false);
+        const gameTime = ref(0);
         
         const paddle = {
             x: canvasWidth / 2 - 60,
@@ -26,13 +27,78 @@ createApp({
         const keys = { left: false, right: false };
         let animationId = null;
         let spawnTimer = null;
+        let gameTimer = null;
         let ctx = null;
         let lastTouchX = null;
         
         const ITEM_TYPES = {
             STAR: { type: 'star', color: '#ffd700', points: 10, size: 25 },
             DIAMOND: { type: 'diamond', color: '#00ffff', points: 25, size: 22 },
-            BOMB: { type: 'bomb', color: '#ff4757', points: -1, size: 28 }
+            BOMB: { type: 'bomb', color: '#ff4757', points: -1, size: 28 },
+            FAST_BOMB: { type: 'bomb', color: '#ff0000', points: -1, size: 22, isFast: true },
+            ULTRA_STAR: { type: 'star', color: '#ffaa00', points: 50, size: 35, isUltra: true }
+        };
+        
+        const getDifficulty = () => {
+            const timeFactor = Math.min(gameTime.value / 60, 5);
+            const scoreFactor = Math.min(score.value / 200, 5);
+            return Math.min(timeFactor + scoreFactor, 8);
+        };
+        
+        const getSpawnInterval = () => {
+            const difficulty = getDifficulty();
+            const base = 1000;
+            const reduction = difficulty * 80;
+            return Math.max(base - reduction, 300);
+        };
+        
+        const getBaseSpeed = () => {
+            const difficulty = getDifficulty();
+            return 2 + difficulty * 0.5;
+        };
+        
+        const spawnItem = () => {
+            const difficulty = getDifficulty();
+            const random = Math.random();
+            let itemType;
+            
+            if (difficulty >= 5 && random < 0.1) {
+                itemType = ITEM_TYPES.ULTRA_STAR;
+            } else if (difficulty >= 3 && random < 0.25) {
+                itemType = ITEM_TYPES.FAST_BOMB;
+            } else if (random < 0.45) {
+                itemType = ITEM_TYPES.STAR;
+            } else if (random < 0.70) {
+                itemType = ITEM_TYPES.DIAMOND;
+            } else {
+                itemType = ITEM_TYPES.BOMB;
+            }
+            
+            const baseSpeed = getBaseSpeed();
+            const speedVariation = itemType.isFast ? 3 : (itemType.isUltra ? -1 : 0);
+            
+            const newItem = {
+                x: Math.random() * (canvasWidth - 50) + 25,
+                y: -30,
+                ...itemType,
+                speed: baseSpeed + Math.random() * 2 + speedVariation,
+                rotation: 0,
+                rotationSpeed: (Math.random() - 0.5) * (itemType.isFast ? 0.2 : 0.1)
+            };
+            
+            items.value.push(newItem);
+            
+            if (difficulty >= 4 && Math.random() < 0.3) {
+                const extraItem = {
+                    x: Math.random() * (canvasWidth - 50) + 25,
+                    y: -30,
+                    ...(Math.random() < 0.6 ? ITEM_TYPES.BOMB : ITEM_TYPES.FAST_BOMB),
+                    speed: baseSpeed + Math.random() * 2,
+                    rotation: 0,
+                    rotationSpeed: (Math.random() - 0.5) * 0.15
+                };
+                items.value.push(extraItem);
+            }
         };
         
         const drawPaddle = () => {
@@ -56,7 +122,7 @@ createApp({
             ctx.rotate(item.rotation || 0);
             ctx.fillStyle = item.color;
             ctx.shadowColor = item.color;
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = item.isUltra ? 20 : 10;
             
             ctx.beginPath();
             for (let i = 0; i < 5; i++) {
@@ -96,7 +162,7 @@ createApp({
             
             ctx.fillStyle = item.color;
             ctx.shadowColor = item.color;
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = item.isFast ? 18 : 10;
             ctx.beginPath();
             ctx.arc(0, 0, item.size / 2, 0, Math.PI * 2);
             ctx.fill();
@@ -104,7 +170,7 @@ createApp({
             ctx.fillStyle = '#2f3542';
             ctx.fillRect(-3, -item.size / 2 - 8, 6, 10);
             
-            ctx.fillStyle = '#ffa502';
+            ctx.fillStyle = item.isFast ? '#ff0000' : '#ffa502';
             ctx.beginPath();
             ctx.arc(0, -item.size / 2 - 12, 5, 0, Math.PI * 2);
             ctx.fill();
@@ -122,30 +188,6 @@ createApp({
             }
         };
         
-        const spawnItem = () => {
-            const random = Math.random();
-            let itemType;
-            
-            if (random < 0.5) {
-                itemType = ITEM_TYPES.STAR;
-            } else if (random < 0.8) {
-                itemType = ITEM_TYPES.DIAMOND;
-            } else {
-                itemType = ITEM_TYPES.BOMB;
-            }
-            
-            const newItem = {
-                x: Math.random() * (canvasWidth - 50) + 25,
-                y: -30,
-                ...itemType,
-                speed: 2 + Math.random() * 2 + score.value / 100,
-                rotation: 0,
-                rotationSpeed: (Math.random() - 0.5) * 0.1
-            };
-            
-            items.value.push(newItem);
-        };
-        
         const checkCollision = (item) => {
             const itemRadius = item.size / 2;
             return (
@@ -155,6 +197,8 @@ createApp({
                 item.x - itemRadius < paddle.x + paddle.width
             );
         };
+        
+        let lastDifficultyUpdate = 0;
         
         const update = () => {
             if (keys.left) {
@@ -182,12 +226,36 @@ createApp({
                     items.value.splice(index, 1);
                 }
             });
+            
+            const now = Date.now();
+            if (now - lastDifficultyUpdate > 1000) {
+                lastDifficultyUpdate = now;
+                updateSpawnRate();
+            }
+        };
+        
+        let currentSpawnInterval = 1000;
+        
+        const updateSpawnRate = () => {
+            const newInterval = getSpawnInterval();
+            if (Math.abs(newInterval - currentSpawnInterval) > 50) {
+                currentSpawnInterval = newInterval;
+                if (spawnTimer) {
+                    clearInterval(spawnTimer);
+                }
+                spawnTimer = setInterval(() => {
+                    if (isPlaying.value) {
+                        spawnItem();
+                    }
+                }, currentSpawnInterval);
+            }
         };
         
         const draw = () => {
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
             
-            ctx.strokeStyle = 'rgba(102, 126, 234, 0.1)';
+            const difficulty = getDifficulty();
+            ctx.strokeStyle = `rgba(102, 126, 234, ${0.05 + difficulty * 0.02})`;
             ctx.lineWidth = 1;
             for (let i = 0; i < canvasWidth; i += 40) {
                 ctx.beginPath();
@@ -217,6 +285,7 @@ createApp({
             lives.value = maxLives;
             isPlaying.value = true;
             isGameOver.value = false;
+            gameTime.value = 0;
             items.value = [];
             paddle.x = canvasWidth / 2 - paddle.width / 2;
             
@@ -224,12 +293,19 @@ createApp({
                 gameCanvas.value.focus();
             }
             
+            gameTimer = setInterval(() => {
+                if (isPlaying.value) {
+                    gameTime.value++;
+                }
+            }, 1000);
+            
             gameLoop();
+            spawnItem();
             spawnTimer = setInterval(() => {
                 if (isPlaying.value) {
                     spawnItem();
                 }
-            }, 1000 - Math.min(score.value * 2, 500));
+            }, getSpawnInterval());
         };
         
         const endGame = () => {
@@ -241,6 +317,9 @@ createApp({
             if (spawnTimer) {
                 clearInterval(spawnTimer);
             }
+            if (gameTimer) {
+                clearInterval(gameTimer);
+            }
         };
         
         const resetGame = () => {
@@ -249,6 +328,9 @@ createApp({
             }
             if (spawnTimer) {
                 clearInterval(spawnTimer);
+            }
+            if (gameTimer) {
+                clearInterval(gameTimer);
             }
             items.value = [];
             startGame();
@@ -292,10 +374,6 @@ createApp({
             lastTouchX = touchX;
         };
         
-        const handleTouchEnd = () => {
-            lastTouchX = null;
-        };
-        
         onMounted(() => {
             ctx = gameCanvas.value.getContext('2d');
             window.addEventListener('keydown', handleKeyDown);
@@ -312,6 +390,9 @@ createApp({
             if (spawnTimer) {
                 clearInterval(spawnTimer);
             }
+            if (gameTimer) {
+                clearInterval(gameTimer);
+            }
         });
         
         return {
@@ -323,6 +404,8 @@ createApp({
             maxLives,
             isPlaying,
             isGameOver,
+            gameTime,
+            getDifficulty,
             startGame,
             resetGame,
             handleKeyDown,

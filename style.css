@@ -43,30 +43,32 @@ body {
 
 .stats-bar {
     display: flex;
-    gap: 30px;
+    gap: 15px;
     justify-content: center;
     width: 100%;
+    flex-wrap: wrap;
 }
 
 .stat-box {
     background: rgba(255, 255, 255, 0.1);
-    padding: 15px 30px;
-    border-radius: 15px;
+    padding: 12px 20px;
+    border-radius: 12px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 5px;
+    min-width: 90px;
 }
 
 .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.7);
 }
 
 .stat-value {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: bold;
 }
 
@@ -74,8 +76,20 @@ body {
     color: #ffd700;
 }
 
+.stat-value.time {
+    color: #00ffff;
+}
+
+.stat-value.difficulty {
+    background: linear-gradient(90deg, #00ff88, #00ffff, #667eea, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
 .heart {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     display: inline-block;
     transition: all 0.3s;
 }
@@ -122,6 +136,7 @@ canvas {
     border-radius: 20px;
     border: 2px solid rgba(255, 255, 255, 0.1);
     animation: popIn 0.4s ease;
+    max-width: 450px;
 }
 
 @keyframes popIn {
@@ -143,9 +158,10 @@ canvas {
 }
 
 .modal p {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.9);
     margin-bottom: 10px;
+    line-height: 1.6;
 }
 
 .btn {
@@ -187,15 +203,16 @@ canvas {
     }
     
     .stats-bar {
-        gap: 15px;
+        gap: 10px;
     }
     
     .stat-box {
-        padding: 10px 20px;
+        padding: 10px 15px;
+        min-width: 75px;
     }
     
     .stat-value {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
     }
     
     .modal {
@@ -207,6 +224,6 @@ canvas {
     }
     
     .modal p {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 }

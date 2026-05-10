@@ -20,6 +20,14 @@
                         <span class="stat-value score">{{ score }}</span>
                     </div>
                     <div class="stat-box">
+                        <span class="stat-label">时长</span>
+                        <span class="stat-value time">{{ gameTime }}s</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">难度</span>
+                        <span class="stat-value difficulty">{{ Math.min(Math.floor(getDifficulty()), 8) }}</span>
+                    </div>
+                    <div class="stat-box">
                         <span class="stat-label">生命值</span>
                         <span class="stat-value lives">
                             <span v-for="i in maxLives" :key="i" class="heart" :class="{ empty: i > lives }">❤️</span>
@@ -41,7 +49,9 @@
                         <div class="modal">
                             <h2>准备开始!</h2>
                             <p>⬅️ ➡️ 用方向键或触屏控制挡板</p>
-                            <p>🌟 接住星星加分，💣 避开炸弹!</p>
+                            <p>🌟 接住星星(+10) 钻石(+25) 超级星(+50)</p>
+                            <p>💣 避开炸弹和快速炸弹！</p>
+                            <p>⏱️ 分数和时间都会增加难度!</p>
                             <button class="btn btn-primary" @click="startGame">开始游戏</button>
                         </div>
                     </div>
@@ -50,6 +60,7 @@
                         <div class="modal">
                             <h2>游戏结束!</h2>
                             <p>最终得分: {{ score }}</p>
+                            <p>游戏时长: {{ gameTime }}秒</p>
                             <button class="btn btn-primary" @click="resetGame">重新开始</button>
                         </div>
                     </div>
