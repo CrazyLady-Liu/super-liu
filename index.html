@@ -3,12 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>石头剪刀布对战游戏</title>
+    <title>接物躲避小游戏</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app"></div>
-    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <div id="app">
+        <div class="container">
+            <header class="header">
+                <h1>🎮 接物躲避小游戏</h1>
+            </header>
+
+            <div class="game-wrapper">
+                <div class="stats-bar">
+                    <div class="stat-box">
+                        <span class="stat-label">分数</span>
+                        <span class="stat-value score">{{ score }}</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">生命值</span>
+                        <span class="stat-value lives">
+                            <span v-for="i in maxLives" :key="i" class="heart" :class="{ empty: i > lives }">❤️</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas ref="gameCanvas" 
+                            :width="canvasWidth" 
+                            :height="canvasHeight"
+                            @keydown="handleKeyDown"
+                            @touchstart="handleTouchStart"
+                            @touchmove="handleTouchMove"
+                            @touchend="handleTouchEnd"
+                            tabindex="0"></canvas>
+                    
+                    <div v-if="!isPlaying && !isGameOver" class="start-screen">
+                        <div class="modal">
+                            <h2>准备开始!</h2>
+                            <p>⬅️ ➡️ 用方向键或触屏控制挡板</p>
+                            <p>🌟 接住星星加分，💣 避开炸弹!</p>
+                            <button class="btn btn-primary" @click="startGame">开始游戏</button>
+                        </div>
+                    </div>
+                    
+                    <div v-if="isGameOver" class="game-over-screen">
+                        <div class="modal">
+                            <h2>游戏结束!</h2>
+                            <p>最终得分: {{ score }}</p>
+                            <button class="btn btn-primary" @click="resetGame">重新开始</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls-hint">
+                    <p>⌨️ 键盘: ← → 或 A D | 📱 触屏: 左右滑动</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
